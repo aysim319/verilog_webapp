@@ -3,12 +3,15 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from .serializers import CodeFileSerializer
+from random import randrange
+from pathlib import Path
 
 
 def index(request):
     return render_nextjs_page_sync(request)
 
+def login(request):
+    return render_nextjs_page_sync(request)
 
 @api_view(['POST'])
 def process(request):
@@ -18,4 +21,11 @@ def process(request):
     # print(serializer.data)
     # if serializer.is_valid():
     #     return Response({"sent": True}, status=status.HTTP_200_OK)
-    return Response(status=status.HTTP_200_OK)
+    implicated_lines = [randrange(1,16) for i in range(randrange(3,8))]
+
+    return Response({"implicated_lines": implicated_lines }, status=status.HTTP_200_OK)
+
+def fetch_codefile(request):
+
+    return
+    pass
