@@ -2,22 +2,57 @@
 
 import type React from 'react'
 import { useEffect, useState, useRef } from 'react'
-import { EditorState } from '@codemirror/state'
-import { EditorView, keymap } from '@codemirror/view'
+import { EditorState, StateEffect, StateField } from '@codemirror/state'
+import { EditorView, Decoration, keymap } from '@codemirror/view'
 import { defaultKeymap } from '@codemirror/commands'
-import { languages } from '@codemirror/language-data'
-import { oneDark } from '@codemirror/theme-one-dark'
+// import { oneDark } from '@codemirror/theme-one-dark'
 import { basicSetup } from 'codemirror'
 import {verilog} from '@codemirror/legacy-modes/mode/verilog'
 import {StreamLanguage} from "@codemirror/language"
+import Editor from "@/components/editor";
 
 interface Props {
-    initialDoc: Props,
+    initialDoc: Props | String,
     onChange?: (state: EditorState) => void
 }
 
-//https://www.codiga.io/blog/revisiting-codemirror-6-react-implementation/
+// @ts-ignore
+export const addLineHighlight = StateEffect.define();
+export const lineHighlightMark = Decoration.line({
+  attributes: {style: 'background-color: yellow'},
+});
 
+// https://github.com/pamelafox/dis-this
+const lineHighlightField = StateField.define({
+  create() {
+    return Decoration.none;
+  },
+  update(lines, tr) {
+    lines = lines.map(tr.changes);
+    // clear existing highlights
+    for (let e of tr.effects) {
+        lines = Decoration.none;
+    }
+
+    for (let e of tr.effects) {
+      if (e.is(addLineHighlight)) {
+        lines = lines.update({add: [lineHighlightMark.range(e.value)]});
+      }
+    }
+    return lines;
+  },
+  provide: (f) => EditorView.decorations.from(f),
+});
+
+
+export function highlightSusLines(view: EditorView, lines: [Number]) {
+    let effect_list = lines.map(num =>
+        addLineHighlight.of(view.state.doc.line(num).from))
+    view.dispatch({effects: effect_list});
+    return view
+}
+
+//https://www.codiga.io/blog/revisiting-codemirror-6-react-implementation/
 const useCodeMirror = <T extends Element>( props: Props): [React.MutableRefObject<T|null>, EditorView?] => {
     const refContainer = useRef<T>(null)
     const [editorView, setEditorView] = useState<EditorView>()
@@ -30,9 +65,9 @@ const useCodeMirror = <T extends Element>( props: Props): [React.MutableRefObjec
             extensions: [
                 basicSetup,
                 keymap.of(defaultKeymap),
-                oneDark,
-                
+                // oneDark,
                 EditorView.lineWrapping,
+                lineHighlightField,
                 StreamLanguage.define(verilog),
                 EditorView.updateListener.of( update => {
                     if (update.changes) {
