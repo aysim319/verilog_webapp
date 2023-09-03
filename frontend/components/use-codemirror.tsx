@@ -5,11 +5,9 @@ import { useEffect, useState, useRef } from 'react'
 import { EditorState, StateEffect, StateField } from '@codemirror/state'
 import { EditorView, Decoration, keymap } from '@codemirror/view'
 import { defaultKeymap } from '@codemirror/commands'
-// import { oneDark } from '@codemirror/theme-one-dark'
 import { basicSetup } from 'codemirror'
 import {verilog} from '@codemirror/legacy-modes/mode/verilog'
 import {StreamLanguage} from "@codemirror/language"
-import Editor from "@/components/editor";
 
 interface Props {
     initialDoc: Props | String,
@@ -52,6 +50,7 @@ export function highlightSusLines(view: EditorView, lines: [Number]) {
     return view
 }
 
+let prev_lineno = 0
 //https://www.codiga.io/blog/revisiting-codemirror-6-react-implementation/
 const useCodeMirror = <T extends Element>( props: Props): [React.MutableRefObject<T|null>, EditorView?] => {
     const refContainer = useRef<T>(null)
@@ -61,11 +60,18 @@ const useCodeMirror = <T extends Element>( props: Props): [React.MutableRefObjec
         if (!refContainer.current) return
         const startState = EditorState.create({
             doc: props.initialDoc,
-            height: 500,
             extensions: [
                 basicSetup,
                 keymap.of(defaultKeymap),
-                // oneDark,
+                EditorView.updateListener.of(function (e) {
+                    if (prev_lineno != e.state.doc.lineAt(e.state.selection.main.head).from && e.docChanged){
+                        prev_lineno = e.state.doc.lineAt(e.state.selection.main.head).from
+                        console.log(e.state.doc.toString())
+                    }
+                    if (e.focusChanged){
+                        console.log("hover")
+                    }
+                }),
                 EditorView.lineWrapping,
                 lineHighlightField,
                 StreamLanguage.define(verilog),
