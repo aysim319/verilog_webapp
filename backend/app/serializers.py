@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CodeFile
+from .models import CodeFile, Participant
 
 
 class CodeFileSerializer(serializers.Serializer):
@@ -7,6 +7,10 @@ class CodeFileSerializer(serializers.Serializer):
     filename = serializers.CharField(required=True, allow_blank=False, max_length=100)
     filepath = serializers.CharField(required=False, allow_blank=True)
     num_lines = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = CodeFile
+        fields = ('id', 'filename', 'filepath', 'num_lines')
 
     def create(self, validated_data):
         """
@@ -24,3 +28,13 @@ class CodeFileSerializer(serializers.Serializer):
         instance.num_lines = validated_data.get('num_lines', instance.num_lines)
         instance.save()
         return instance
+
+class ParticipantSerializer(serializers.Serializer):
+    pid = serializers.IntegerField(required=True,)
+    name = serializers.CharField(required=True, allow_blank=False)
+    date = serializers.DateTimeField(required=True, allow_null=False)
+    class Meta:
+        model = Participant
+        fields = ('pid', 'name', 'date')
+    def create(self, validated_data):
+        return Participant.objects.create(**validated_data)

@@ -1,46 +1,56 @@
-from django_nextjs.render import render_nextjs_page_sync
+from django_nextjs.render import render_nextjs_page
+import json
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-
-import random
 from random import randrange
 
-from dotenv import load_dotenv
-import os
-from django.views.decorators.csrf import csrf_exempt
-
-load_dotenv()
-NUM_PROBLEM = int(os.getenv("NUM_PROBLEM"))
-
-# from src.settings import CODE_FILES
+from src.settings import STATIC_PATH
 
 
-def index(request):
-    pid = request.GET.get('pid')
-    print(f"HIIIIII {pid}")
-    seed = random.seed(pid)
-    # problem_set = random.sample(CODE_FILES, NUM_PROBLEM)
-    # print(problem_set)
-    return render_nextjs_page_sync(request)
+from .serializers import ParticipantSerializer
+from .utils.problems import generate_problem
 
-def login(request):
-    return render_nextjs_page_sync(request)
 
+async def index(request):
+    return await render_nextjs_page(request)
+
+@api_view(['GET'])
+def get_code_snippet(request):
+
+    return Response({"code_snippets": generate_problem(request.session.get("seed"))}, status=200)
+async def login(request):
+    return await render_nextjs_page(request)
+
+@api_view(['GET'])
+def consent_form(request):
+    with open(f"{STATIC_PATH}/consent_form.txt") as f:
+        consent_form = f.read()
+    return Response({"text":consent_form}, status=200)
 
 @api_view(['POST'])
 def process(request):
     # serializer = CodeFileSerializer(data=request.data)
-    print(request.body)
+    # print(request.body)
 
     # print(serializer.data)
     # if serializer.is_valid():
     #     return Response({"sent": True}, status=status.HTTP_200_OK)
-    implicated_lines = [randrange(1,16) for i in range(randrange(3,8))]
+    implicated_lines = [randrange(1, 16) for i in range(randrange(3, 8))]
+    return Response({"implicated_lines": implicated_lines}, status=status.HTTP_200_OK)
 
-    return Response({"implicated_lines": implicated_lines }, status=status.HTTP_200_OK)
 
-def fetch_codefile(request):
+@api_view(['POST'])
+def register(request):
+    data_dict = json.loads(request.body)
+    serializer = ParticipantSerializer(data=data_dict)
+    print(request.session.get('seed'), data_dict.get('pid'))
+    if not request.session.get('seed'):
+        request.session['seed'] = data_dict.get('pid')
+    if serializer.is_valid():
+        serializer.save()
+        print(request.session.get('seed'), data_dict.get('pid'))
 
-    return
-    pass
+        return Response(status=status.HTTP_201_CREATED)
+    return Response(status=status.HTTP_400_BAD_REQUEST)
+

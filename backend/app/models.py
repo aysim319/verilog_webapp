@@ -12,3 +12,8 @@ class CodeFile(models.Model):
 
     class Meta:
         ordering = ['created']
+
+class Participant(models.Model):
+    pid = models.PositiveIntegerField(primary_key=True)
+    name = models.TextField()
+    date = models.DateTimeField()

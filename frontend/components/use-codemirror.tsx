@@ -50,12 +50,22 @@ export function highlightSusLines(view: EditorView, lines: [Number]) {
     return view
 }
 
+export function showNextCode(view: EditorView, doc: string){
+    view.dispatch({changes: {from:0, to: view.state.doc.length, insert: doc}})
+}
+
 let prev_lineno = 0
 //https://www.codiga.io/blog/revisiting-codemirror-6-react-implementation/
 const useCodeMirror = <T extends Element>( props: Props): [React.MutableRefObject<T|null>, EditorView?] => {
     const refContainer = useRef<T>(null)
     const [editorView, setEditorView] = useState<EditorView>()
     const { onChange } = props
+    const fixedHeightEditor = EditorView.theme({
+        "&": { maxHeight: "70vh", minWidth: "100%", fontSize: "150%"},
+        ".cm-scroller": {overflow: "auto"}
+    })
+
+
     useEffect(() => {
         if (!refContainer.current) return
         const startState = EditorState.create({
@@ -73,6 +83,7 @@ const useCodeMirror = <T extends Element>( props: Props): [React.MutableRefObjec
                     }
                 }),
                 EditorView.lineWrapping,
+                fixedHeightEditor,
                 lineHighlightField,
                 StreamLanguage.define(verilog),
                 EditorView.updateListener.of( update => {
