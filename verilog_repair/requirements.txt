@@ -1,0 +1,4 @@
+pyverilog==1.2.1
+uvicorn==0.25.0
+fastapi==0.108.0
+pydantic-settings==2.1.0

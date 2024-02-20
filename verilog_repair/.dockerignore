@@ -1,0 +1,14 @@
+verilog_venv
+.pytest_cache
+input
+output
+prototype/repair_logs
+prototype/experiments_results.xlsx
+tests/
+.git
+.env
+*.log
+__pycache__
+*.pyc
+*.pyo
+*.pyd
