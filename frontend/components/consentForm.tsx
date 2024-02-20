@@ -3,14 +3,14 @@ import Head from 'next/head'
 import styles from '../../styles/Home.module.css'
 import {useRouter} from "next/navigation";
 import {useState} from "react";
-import {Spacer} from "@nextui-org/react";
+import {Spacer} from "@nextui-org/spacer";
 
 
-export default function LoginPage() {
+export default function RegisterPage() {
 
     const [form, setForm] = useState({
-        pid: 23423,
-        name: 'asasdfa',
+        pid: 1,
+        name: 'test',
         date: new Date().toISOString().split('T')[0]
     })
     const router = useRouter()
@@ -32,9 +32,12 @@ export default function LoginPage() {
         if (!res.ok) {
             throw new Error("fetch failed")
         }
-        await router.push(`/?pid=${form.pid}`)
+        const data = await res.json()
+        const token = data.token
+
+        await router.push(`/home?tk=${token}`)
     }
-    const handleSubmit =  (e) => {
+    const handleSubmit =  (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         if (form.pid > 0 && form.name.length != 0) {
             sendSubmitData()
@@ -43,7 +46,7 @@ export default function LoginPage() {
         }
     }
 
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setForm({...form, [e.target.name]: e.target.value})
     }
 
