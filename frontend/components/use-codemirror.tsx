@@ -34,6 +34,7 @@ const lineHighlightField = StateField.define({
 
     for (let e of tr.effects) {
       if (e.is(addLineHighlight)) {
+          // @ts-ignore
         lines = lines.update({add: [lineHighlightMark.range(e.value)]});
       }
     }
@@ -45,6 +46,7 @@ const lineHighlightField = StateField.define({
 
 export function highlightSusLines(view: EditorView, lines: [Number]) {
     let effect_list = lines.map(num =>
+        // @ts-ignore
         addLineHighlight.of(view.state.doc.line(num).from))
     view.dispatch({effects: effect_list});
     return view
@@ -60,15 +62,16 @@ const useCodeMirror = <T extends Element>( props: Props): [React.MutableRefObjec
     const refContainer = useRef<T>(null)
     const [editorView, setEditorView] = useState<EditorView>()
     const { onChange } = props
-    const fixedHeightEditor = EditorView.theme({
-        "&": { maxHeight: "70vh", minWidth: "100%", fontSize: "150%"},
-        ".cm-scroller": {overflow: "auto"}
+    const cssStyles = EditorView.theme({
+        "&": { maxHeight: "70vh", minWidth: "100%", fontSize: "150%", border: "1px solid #000000"},
+        ".cm-scroller": {overflow: "auto"},
     })
 
 
     useEffect(() => {
         if (!refContainer.current) return
         const startState = EditorState.create({
+            // @ts-ignore
             doc: props.initialDoc,
             extensions: [
                 basicSetup,
@@ -83,7 +86,7 @@ const useCodeMirror = <T extends Element>( props: Props): [React.MutableRefObjec
                     }
                 }),
                 EditorView.lineWrapping,
-                fixedHeightEditor,
+                cssStyles,
                 lineHighlightField,
                 StreamLanguage.define(verilog),
                 EditorView.updateListener.of( update => {
