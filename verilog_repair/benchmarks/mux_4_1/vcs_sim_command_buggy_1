@@ -1,0 +1,2 @@
+timeout 5 iverilog -o simv_1 /Users/aysim/code/verilog_webapp/verilog_repair/benchmarks/mux_4_1/mux_4_1_tb.v /Users/aysim/code/verilog_webapp/backend/data/1/mux_4_1_1707856744.v && \
+ vvp simv_1

@@ -1,0 +1,1 @@
+timeout 10 iverilog -g 2009 -o simv_PID PATHtff_tb.v INPUT && vvp simv_PID

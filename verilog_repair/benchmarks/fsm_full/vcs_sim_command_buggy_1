@@ -1,0 +1,2 @@
+timeout 20 iverilog -o simv_1 /Users/aysim/code/verilog_webapp/verilog_repair/benchmarks/fsm_full/fsm_full_tb_t1.v /Users/aysim/code/verilog_webapp/backend/data/1/fsm_full_1708454332.v && \
+ vvp simv_1

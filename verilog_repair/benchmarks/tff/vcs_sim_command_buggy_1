@@ -1,0 +1,1 @@
+timeout 10 iverilog -g 2009 -o simv_1 /Users/aysim/code/verilog_webapp/verilog_repair/benchmarks/flip_flop/tff_tb.v /Users/aysim/code/verilog_webapp/verilog_repair/benchmarks/flip_flop/tff_wadden_buggy1.v && vvp simv_1

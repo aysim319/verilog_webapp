@@ -1,0 +1,2 @@
+timeout 20 iverilog -o simv_PID PATHfsm_full_tb_t1.v INPUT && \
+ vvp simv_PID

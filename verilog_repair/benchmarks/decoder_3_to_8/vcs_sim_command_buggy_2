@@ -1,0 +1,44 @@
+timeout 7 iverilog -o simv_2 /Users/aysim/code/verilog_webapp/verilog_repair/benchmarks/decoder_3_to_8/decoder_3_to_8_tb_t1.v /Users/aysim/code/verilog_webapp/backend/data/2/decoder_3_to_8_1707941981.v && vvp simv_2
+#timeout 7 vcs -sverilog +vc -Mupdate -line -full64 decoder_3_to_8_tb_t1.v decoder_3_to_8.v -o simv -R
+
+#-sverilog
+#   Enables the use of the Verilog language extensions in the Accellera
+#   SystemVerilog specification.
+#
+#+vc[+abstract][+allhdrs][+list]
+#   Enables the direct call of C/C++ functions in your Verilog code
+#   using the DirectC interface. The optional suffixes specify the following:
+#
+#   +abstract
+#      Specifies that you are using abstract access trough vc_handles to the
+#      data structures for the Verilog arguments.
+#
+#   +allhdrs
+#      Writes the vc_hdrs.h file that contains external function declarations
+#      that you can use in your Verilog code.
+#
+#   +list
+#      Displays on the screen all the functions that you called in your
+#      Verilog source code.
+#
+#-Mupdate[=0]
+#   By default VCS overwrites the Makefile between compilations. If you
+#   wish to preserve the Makefile between compilations, enter this
+#   option with the 0 argument.
+#   Entering this argument without the 0 argument, specifies the
+#   the default condition, incremental compilation and updating the
+#   Makefile.
+#
+#-full64
+#   Compiles the design in 64 bit mode and creates a 64 bit executable
+#   for simulating in 64 bit mode.
+#
+#
+#-o <name>
+#   Specifies the name of the executable file that is the product of
+#   compilation. The default name is simv.
+#
+#-R
+#   Run the executable file immediately after VCS links together the
+#   executable file. You can add any runtime option to the vcs command
+#   line.
