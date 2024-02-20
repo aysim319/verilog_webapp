@@ -2,7 +2,9 @@
 const nextConfig = {
     env: {
         BACKEND_URL:process.env.BACKEND_URL,
-        NUM_PROBLEM:process.env.NUM_PROBLEM
+        NUM_PROBLEMS:process.env.NUM_PROBLEMS,
+        DEBUG:process.env.DEBUG,
+        MIN_ATTEMPTS: process.env.MIN_ATTEMPTS,
     },
     trailingSlash: false,
     async rewrites() {
