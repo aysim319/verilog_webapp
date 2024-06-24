@@ -23,12 +23,15 @@ VERILOG_API_URL = os.getenv("VERILOG_API_URL")
 DEBUG = TypeAdapter(bool).validate_python(os.getenv('DEBUG'))
 
 
-async def index(request):
+async def index_page(request):
     return await render_nextjs_page(request)
-async def register(request):
+async def register_page(request):
     return await render_nextjs_page(request)
 
-async def login(request):
+async def login_page(request):
+    return await render_nextjs_page(request)
+
+async def done_page(request):
     return await render_nextjs_page(request)
 
 
@@ -51,7 +54,7 @@ def process_register(request):
         return Response(data={'token': token}, status=status.HTTP_201_CREATED)
 
     if serializer.is_valid():
-        serializer.create()
+        serializer.save()
         pid_path = pathlib.Path(f"{DATA_PATH}/{pid}")
         pid_path.mkdir(parents=True, exist_ok=True)
 
@@ -93,6 +96,40 @@ def mark_problem(request):
 
     return Response(status=status.HTTP_202_ACCEPTED)
 
+@api_view(['PUT'])
+def record_codechange(request):
+    jwt_token = request.data.get('pid')
+    payload = decode_token(jwt_token)
+    if not payload:
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+    code_snippet = request.data.get("code_snippet")
+    if code_snippet:
+        code_type = request.data.get("code_type")
+        bug_type = request.data.get("bug_type")
+        implicated_lines = request.data.get("implicated_lines")
+        implicated_lines_str = ",".join([str(num) for num in implicated_lines]) if implicated_lines else ''
+        pid = payload.get("pid")
+        epoch_time = int(time.time())
+
+        file_name = f"{code_type}_{epoch_time}.v"
+        file_path = f"{DATA_PATH}/{pid}"
+        with open(f"{file_path}/{file_name}", "w") as f:
+            f.write(code_snippet)
+
+        codefile_dict = {
+            "filename": file_name,
+            "filepath": file_path,
+            "created": datetime.fromtimestamp(epoch_time),
+            "participant_id": int(pid),
+            "implicated_lines": implicated_lines_str
+        }
+
+        codefile_serializer = CodeFileSerializer(data=codefile_dict)
+        codefile_serializer.create(codefile_dict)
+
+        return Response(status=status.HTTP_202_ACCEPTED)
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
 @api_view(['GET'])
 def get_problem_status(request):
     jwt_token = request.data.get('pid')
@@ -131,7 +168,7 @@ def process(request):
             "code_filename": file_name}
     res = requests.post(f"{VERILOG_API_URL}/api/submit", json=data)
 
-    implicated_lines = json.loads(res.content).get("implicated_lines") if res.status_code == 200 else ["-1"]
+    implicated_lines = json.loads(res.content).get("implicated_lines") if res.status_code == 200 else [-1]
 
     implicated_lines_str = ",".join([str(line) for line in implicated_lines])
 

@@ -5,6 +5,7 @@ const nextConfig = {
         NUM_PROBLEMS:process.env.NUM_PROBLEMS,
         DEBUG:process.env.DEBUG,
         MIN_ATTEMPTS: process.env.MIN_ATTEMPTS,
+        RECORD_INTERVAL_MS: process.env.RECORD_INTERVAL_MS,
     },
     trailingSlash: false,
     async rewrites() {

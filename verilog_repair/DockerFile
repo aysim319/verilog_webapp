@@ -1,21 +1,32 @@
 FROM ubuntu:22.04
 
-RUN apt-get update && apt-get install iverilog python3 python3-pip -y
+RUN apt-get update && apt-get install iverilog python3.10 python3-pip python3-venv -y
+
 WORKDIR /verilog_repair
-COPY ["requirements.txt ./",
-      "benchmarks ./",
-      "prototype ./",
-      "pyverilog_changes ./",
-      "process.py ./"
-]
+
+#RUN mkdir benchmarks && \
+#    mkdir src && \
+#    mkdir pyverilog_changes && \
+#    mkdir prototype \
+
+COPY . .
 
 RUN python3 -m venv venv && \
-    source /verilog_repair/venv/bin/activate && \
+    . venv/bin/activate && \
     python -m pip install --upgrade pip && \
     python -m pip install --upgrade setuptools && \
     pip install -r requirements.txt
 
-RUN  ln -sf /verilog_repair/pyverilog_changes/parser.py /verilog_repair/venv/lib/python3.11/site-packages/pyverilog/vparser/parser.py && \
-     ln -sf /verilog_repair/pyverilog_changes/codegen.py /verilog_repair/venv/lib/python3.11/site-packages/pyverilog/ast_code_generator/codegen.py && \
-     ln -sf /verilog_repair/pyverilog_changes/ast.py /verilog_repair/venv/lib/python3.11/site-packages/pyverilog/vparser/ast.py && \
-     ln -sf /verilog_repair/pyverilog_changes/ast_classes.txt /verilog_repair/venv/lib/python3.11/site-packages/pyverilog/vparser/ast_classes.txt && \
+RUN  ln -sf /verilog_repair/pyverilog_changes/parser.py /verilog_repair/venv/lib/python3.10/site-packages/pyverilog/vparser/parser.py && \
+     ln -sf /verilog_repair/pyverilog_changes/codegen.py /verilog_repair/venv/lib/python3.10/site-packages/pyverilog/ast_code_generator/codegen.py && \
+     ln -sf /verilog_repair/pyverilog_changes/ast.py /verilog_repair/venv/lib/python3.10/site-packages/pyverilog/vparser/ast.py && \
+     ln -sf /verilog_repair/pyverilog_changes/ast_classes.txt /verilog_repair/venv/lib/python3.10/site-packages/pyverilog/vparser/ast_classes.txt && \
+     mkdir data
+
+EXPOSE 8080
+
+RUN chmod a+x entrypoint.sh
+
+ENTRYPOINT ["/bin/bash"]
+
+#ENTRYPOINT ["./entrypoint.sh"]

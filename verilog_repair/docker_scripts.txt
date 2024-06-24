@@ -1,0 +1,2 @@
+docker build . -t cirfix_service
+docker run --name cirfix -p 8008:8008 -dit -v /Users/aysim/code/verilog_webapp/backend/data:/verilog_repair/data cirfix_service
