@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from verilog_repair.process import get_implicated_lines
+from process import get_implicated_lines
 
 router = APIRouter(prefix='/api')
 

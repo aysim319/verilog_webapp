@@ -4,7 +4,6 @@
 
 .main {
   min-height: 100vh;
-  padding: 5rem 5%;
   flex: 1;
   display: flex;
   justify-content: center;
@@ -66,6 +65,7 @@
   /*max-height: 70vh;*/
   flex: 1 1 auto;
 }
+
 
 .grid {
   display: flex;

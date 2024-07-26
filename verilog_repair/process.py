@@ -14,7 +14,9 @@ from pyverilog.vparser.parser import parse, NodeNumbering
 from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
 import pyverilog.vparser.ast as vast
 import prototype.fitness as fitness
+import logging
 
+logging.basicConfig(filename="cirfix.log", format='%(asctimes)s - %(levelname)s - %(message)s')
 
 load_dotenv()
 
@@ -187,9 +189,9 @@ class MutationOp(ASTCodeGenerator):
                         insert_point = i + 1
                         break
                 if insert_point != -1:
-                    # print(ast.statements)
+                    # logging.debug(ast.statements)
                     ast.statements.insert(insert_point, copy.deepcopy(node))
-                    # print(ast.statements)
+                    # logging.debug(ast.statements)
                     return
 
         for c in ast.children():
@@ -397,12 +399,12 @@ class MutationOp(ASTCodeGenerator):
         if node_id == None:
             self.get_deletable_nodes(ast) # get all nodes that can be deleted without breaking the AST / syntax
             if len(self.deletable_nodes) == 0: # if no nodes can be deleted, return without attepmting delete
-                print("Delete operation not possible. Returning with no-op.")
+                logging.infp("Delete operation not possible. Returning with no-op.")
                 return patch_list, ast
 
             random.seed(inc_seed())
             node_id = random.choice(self.deletable_nodes) # choose a random node_id to delete
-            print("Deleting node with id %s\n" % node_id)
+            logging.info("Deleting node with id %s\n" % node_id)
 
         self.delete_node(ast, node_id) # delete the node corresponding to node_id
         self.numbering.renumber(ast) # renumber nodes
@@ -423,13 +425,13 @@ class MutationOp(ASTCodeGenerator):
             self.get_insertable_nodes(ast) # get all nodes with a type that is suited to insertion in block statements -> src
             self.get_nodes_in_block_stmt(ast) # get all nodes within a block statement -> dest
             if len(self.insertable_nodes) == 0 or len(self.stmt_nodes) == 0: # if no insertable nodes exist, exit gracefully
-                print("Insert operation not possible. Returning with no-op.")
+                logging.info("Insert operation not possible. Returning with no-op.")
                 return patch_list, ast
             random.seed(inc_seed())
             after_id = random.choice(self.stmt_nodes) # choose a random src and dest
             random.seed(inc_seed())
             node_id = random.choice(self.insertable_nodes)
-            print("Inserting node with id %s after node with id %s\n" % (node_id, after_id))
+            logging.info("Inserting node with id %s after node with id %s\n" % (node_id, after_id))
         self.get_node_from_ast(ast, node_id) # get the node associated with the src node id
         self.insert_stmt_node(ast, self.tmp_node, after_id) # perform the insertion
         self.numbering.renumber(ast) # renumber nodes
@@ -457,29 +459,29 @@ class MutationOp(ASTCodeGenerator):
             else:
                 random.seed(inc_seed())
                 node_id = random.randint(0,self.max_node_id) # get random node id to replace
-            print("Node to replace id: %s" % node_id)
+            logging.info("Node to replace id: %s" % node_id)
 
         self.get_node_to_replace_class(ast, node_id) # get the class of the node associated with the random node id
-        print("Node to replace class: %s" % self.node_class_to_replace)
+        logging.info("Node to replace class: %s" % self.node_class_to_replace)
         if self.node_class_to_replace == None: # if the node does not exist, return with no-op
             return patch_list, ast
 
         if with_id == None:
             self.get_replaceable_nodes_by_class(ast, self.node_class_to_replace) # get all valid nodes that have a class that could be substituted for the original node's class
             if len(self.replaceable_nodes) == 0: # if no replaceable nodes exist, exit gracefully
-                print("Replace operation not possible. Returning with no-op.")
+                logging.info("Replace operation not possible. Returning with no-op.")
                 return patch_list, ast
-            print("Replaceable nodes: %s" % str(self.replaceable_nodes))
+            logging.info("Replaceable nodes: %s" % str(self.replaceable_nodes))
             random.seed(inc_seed())
             with_id = random.choice(self.replaceable_nodes) # get a random node id from the replaceable nodes
-            print("Replacing node id %s with node id %s" % (node_id,with_id))
+            logging.info("Replacing node id %s with node id %s" % (node_id,with_id))
 
         self.get_node_from_ast(ast, with_id) # get the node associated with with_id
 
         # safety guard: this could happen if crossover makes the GA think a node is actually suitable for replacement when in reality it is not....
         if self.tmp_node.__class__ not in REPLACE_TARGETS[self.node_class_to_replace]:
-            print(self.tmp_node.__class__)
-            print(REPLACE_TARGETS[self.node_class_to_replace])
+            logging.info(self.tmp_node.__class__)
+            logging.info(REPLACE_TARGETS[self.node_class_to_replace])
             return patch_list, ast
 
         self.replace_with_node(ast, node_id, self.tmp_node) # perform the replacement
@@ -519,29 +521,29 @@ class MutationOp(ASTCodeGenerator):
         if template == None:
             template = self.weighted_template_choice(list(TEMPLATE_MUTATIONS.keys()))
             node_type = TEMPLATE_MUTATIONS[template][0]
-            # print(template)
-            # print(node_type)
+            # logging.debug(template)
+            # logging.debug(node_type)
             self.get_nodes_by_class(ast, node_type)
-            # print(self.nodes_by_class)
+            # logging.debug(self.nodes_by_class)
             if len(self.nodes_by_class) == 0:
-                print("\nTemplate %s cannot be applied to AST. Returning with no-op." % template)
+                logging.info("\nTemplate %s cannot be applied to AST. Returning with no-op." % template)
                 return patch_list, ast # no-op
             random.seed(inc_seed())
             node_id = random.choice(self.nodes_by_class)
-            # print(node_id)
+            # logging.debug(node_id)
 
         self.get_node_from_ast(ast, node_id)
 
         # safety guards: the following can be caused by crossover operations splitting a patchlist
         if self.tmp_node == None:
-            print("Node with id %d does not exist. Returning with no-op." % node_id)
+            logging.debug("Node with id %d does not exist. Returning with no-op." % node_id)
             return patch_list, ast # no-op
         elif not (self.tmp_node.__class__.__name__ == TEMPLATE_MUTATIONS[template][0]):
-            print("Node classes do not match for template. This could have been caused by a crossover operation. Returning with no-op.")
-            print("Node class was %s whereas expected class was %s..." % (self.tmp_node.__class__.__name__, TEMPLATE_MUTATIONS[template][0]))
+            logging.debug("Node classes do not match for template. This could have been caused by a crossover operation. Returning with no-op.")
+            logging.debug("Node class was %s whereas expected class was %s..." % (self.tmp_node.__class__.__name__, TEMPLATE_MUTATIONS[template][0]))
             return patch_list, ast # no-op
 
-        print("\nApplying template %s to node %d\nOld:" % (template, node_id))
+        logging.info("\nApplying template %s to node %d\nOld:" % (template, node_id))
         self.tmp_node.show()
 
         child_patchlist = copy.deepcopy(patch_list)
@@ -575,7 +577,6 @@ class MutationOp(ASTCodeGenerator):
             new_node = vast.NonblockingSubstitution(copy.deepcopy(self.tmp_node.left), copy.deepcopy(self.tmp_node.right), copy.deepcopy(self.tmp_node.ldelay), copy.deepcopy(self.tmp_node.rdelay), copy.deepcopy(self.tmp_node.lineno))
 
         new_node.node_id = node_id
-        print("New:")
         new_node.show()
         self.replace_with_node(ast, node_id, new_node) # replace with new template node
         child_patchlist.append("template(%s,%s)" % (template, node_id))
@@ -606,15 +607,15 @@ class MutationOp(ASTCodeGenerator):
         parent_2_half_1 = copy.deepcopy(parent_2)[:sp_2]
         parent_2_half_2 = copy.deepcopy(parent_2)[sp_2:]
 
-        print(parent_1, parent_2)
-        print(sp_1, sp_2)
-        print(parent_1_half_1, parent_1_half_2)
-        print(parent_2_half_1, parent_2_half_2)
+        logging.info(parent_1, parent_2)
+        logging.info(sp_1, sp_2)
+        logging.info(parent_1_half_1, parent_1_half_2)
+        logging.info(parent_2_half_1, parent_2_half_2)
 
         parent_1_half_1.extend(parent_2_half_2)
         parent_2_half_1.extend(parent_1_half_2)
 
-        print(parent_1_half_1, parent_2_half_1)
+        logging.info(parent_1_half_1, parent_2_half_1)
 
         return parent_1_half_1, parent_2_half_1
 
@@ -639,7 +640,7 @@ class MutationOp(ASTCodeGenerator):
             elif operator == "template":
                 _, ast = self.apply_template(ast, patch_list, operands[0], int(operands[1]))
             else:
-                print("Invalid operator in patch list: %s" % m)
+                logging.info(''"Invalid operator in patch list: %s" % m)
         return ast
 
 
@@ -720,7 +721,7 @@ def calc_candidate_fitness(fileName, eval_script, orig_file, proj_dir, output_di
 
     # TODO: The test bench is currently hard coded in eval_script. Do we want to change that?
     command = f"bash {eval_script} {orig_file} {fileName} {proj_dir} {output_file} {pid}"
-    print("COMMAND", command)
+    logging.info("COMMAND", command)
     os.system(command)
 
     if not os.path.exists(output_file):
@@ -747,7 +748,7 @@ def calc_candidate_fitness(fileName, eval_script, orig_file, proj_dir, output_di
 
         normalized_ff = ff/total_possible
         if normalized_ff < 0: normalized_ff = 0
-        print("FITNESS = %f" % normalized_ff)
+        logging.info("FITNESS = %f" % normalized_ff)
 
         # if os.path.exists("output_%s.txt" % TB_ID): os.remove("output_%s.txt" % TB_ID) # Do we need to do this here? Does it make a difference?
         t_finish = time.time()
@@ -815,7 +816,7 @@ def get_output_mismatch(oracle, output_file):
 
 
 def set_config(pid: str, code_type: str, code_filename: str) -> List[str]:
-    BACKEND_ROOT_PATH = f"{str(Path(__file__).resolve().parent.parent)}/backend"
+    BACKEND_ROOT_PATH = os.getenv("BACKEND_ROOT_PATH", "/verilog_repair")
     src_file = f"{BACKEND_ROOT_PATH}/data/{pid}/{code_filename}"
     test_bench = f"{PYVERILOG_ROOT_PATH}/benchmarks/{code_type}/{TESTBENCH_MAPPING.get(code_type)}"
     eval_script = f"{PYVERILOG_ROOT_PATH}/benchmarks/{code_type}/run.sh"
@@ -833,7 +834,9 @@ def get_implicated_lines(pid:str, code_type:str, code_filename: str) -> List[int
     filelist = [src_file, test_bench]
 
     for f in filelist:
-        if not os.path.exists(f): raise IOError("file not found: " + f)
+        if not os.path.exists(f):
+            logging.error("file not found: " + f)
+            raise IOError("file not found: " + f)
 
     LOG = False
     CODE_FROM_PATCHLIST = False
@@ -863,10 +866,10 @@ def get_implicated_lines(pid:str, code_type:str, code_filename: str) -> List[int
     FITNESS_EVAL_TIMES.append(sim_time)
 
     GENOME_FITNESS_CACHE[str([])] = orig_fitness
-    print("Original program fitness = %f" % orig_fitness)
-    print("FINAL STATEMENTS:")
-    print("Fitness = %f" % orig_fitness)
-    print("IMPLICATED LINES:")
+    logging.info("Original program fitness = %f" % orig_fitness)
+    logging.info("FINAL STATEMENTS:")
+    logging.info("Fitness = %f" % orig_fitness)
+    logging.info("IMPLICATED LINES:")
     mismatch_set, uniq_headers = get_output_mismatch(oracle, output_file)
     mismatch_set_copy = copy.deepcopy(mismatch_set)
     mutation_op.get_fault_loc_targets(ast, mismatch_set, uniq_headers)
@@ -882,5 +885,5 @@ def get_implicated_lines(pid:str, code_type:str, code_filename: str) -> List[int
     # mutation_op.get_implicated_lines(ast)
     # mutation_op.print_implicated_lines(mutation_op.implicated_lines, src_code)
     implicated_lines = list(mutation_op.implicated_lines)
-    print(f"IMPLICATED LINES: {implicated_lines}")
+    logging.info(f"IMPLICATED LINES: {implicated_lines}")
     return list(mutation_op.implicated_lines)

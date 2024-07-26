@@ -1,0 +1,2 @@
+timeout 7 iverilog -o simv_6 /Users/aysim/code/verilog_webapp/verilog_repair/benchmarks/lshift_reg/lshift_reg_tb_t1.v /Users/aysim/code/verilog_webapp/backend/data/6/lshift_reg_1709054003.v && \
+ vvp simv_6

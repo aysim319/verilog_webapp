@@ -17,7 +17,7 @@ interface Props {
 // @ts-ignore
 export const addLineHighlight = StateEffect.define();
 export const lineHighlightMark = Decoration.line({
-  attributes: {style: 'background-color: yellow'},
+  attributes: {class: 'styled-background'},
 });
 
 // https://github.com/pamelafox/dis-this
@@ -56,6 +56,7 @@ export function showNextCode(view: EditorView, doc: string){
     view.dispatch({changes: {from:0, to: view.state.doc.length, insert: doc}})
 }
 
+
 let prev_lineno = 0
 //https://www.codiga.io/blog/revisiting-codemirror-6-react-implementation/
 const useCodeMirror = <T extends Element>( props: Props): [React.MutableRefObject<T|null>, EditorView?] => {
@@ -65,6 +66,8 @@ const useCodeMirror = <T extends Element>( props: Props): [React.MutableRefObjec
     const cssStyles = EditorView.theme({
         "&": { maxHeight: "70vh", minWidth: "100%", fontSize: "150%", border: "1px solid #000000"},
         ".cm-scroller": {overflow: "auto"},
+        ".cm-selected": { backgroundColor: "#0000FF !important"},
+        ".styled-background": { backgroundColor: "#FFFF00"}
     })
 
 
@@ -76,15 +79,6 @@ const useCodeMirror = <T extends Element>( props: Props): [React.MutableRefObjec
             extensions: [
                 basicSetup,
                 keymap.of(defaultKeymap),
-                EditorView.updateListener.of(function (e) {
-                    if (prev_lineno != e.state.doc.lineAt(e.state.selection.main.head).from && e.docChanged){
-                        prev_lineno = e.state.doc.lineAt(e.state.selection.main.head).from
-                        console.log(e.state.doc.toString())
-                    }
-                    if (e.focusChanged){
-                        console.log("hover")
-                    }
-                }),
                 EditorView.lineWrapping,
                 cssStyles,
                 lineHighlightField,
@@ -101,10 +95,16 @@ const useCodeMirror = <T extends Element>( props: Props): [React.MutableRefObjec
             parent: refContainer.current
         })
         setEditorView(view)
+
+        /**
+         * Make sure to destroy the codemirror instance
+         * when our components are unmounted.
+         */
         return () => {
             view.destroy()
+            setEditorView(undefined);
             }
-        }, [refContainer])
+        }, [])
         return [refContainer, editorView]
     }
 export default useCodeMirror

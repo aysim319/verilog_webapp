@@ -36,7 +36,7 @@ export default function LoginForm() {
         await router.push(`/home?tk=${token}`)
     }
 
-    const handleChange = (e: React.ChangeEvent<HTMLFormElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setForm({...form, [e.target.name]: e.target.value})
     }
 

@@ -1,4 +1,4 @@
-timeout 7 iverilog -o simv_1 /Users/aysim/code/verilog_webapp/verilog_repair/benchmarks/decoder_3_to_8/decoder_3_to_8_tb_t1.v /Users/aysim/code/verilog_webapp/backend/data/1/decoder_3_to_8_1708619509.v && vvp simv_1
+timeout 7 iverilog -o simv_10 /Users/aysim/code/verilog_webapp/verilog_repair/benchmarks/decoder_3_to_8/decoder_3_to_8_tb_t1.v /Users/aysim/code/verilog_webapp/backend/data/10/decoder_3_to_8_1709139463.v && vvp simv_10
 #timeout 7 vcs -sverilog +vc -Mupdate -line -full64 decoder_3_to_8_tb_t1.v decoder_3_to_8.v -o simv -R
 
 #-sverilog

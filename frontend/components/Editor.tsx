@@ -1,5 +1,5 @@
 'use client'
-import React, {useState, useCallback, useEffect, MouseEventHandler} from 'react'
+import React, {useState, useCallback, useEffect, MouseEventHandler, useRef} from 'react'
 import styles from '../styles/Home.module.css'
 import Image from 'next/image'
 import FilpFlop from '@/public/flip_flop1.png'
@@ -14,39 +14,27 @@ type codeSnippetsProps = {
     code_snippets: string []
 }
 
-// @ts-ignore
-function submitCode(searchParams, codeSnippets, editorView) {
-    return fetch(`/api/submit`, {
-           method: 'POST',
-           cache: 'no-cache',
-           headers: {
-               'Content-Type': 'application/json',
-           },
-           body: JSON.stringify({
-               'code_type': codeSnippets[0][0],
-               'code_snippet': editorView?.state.doc.toString(),
-               'bug_type': codeSnippets[0][2],
-               'pid': `${searchParams.get('tk')}`
-           })
-        })
-}
 export default function Editor(codeSnippetsParams : codeSnippetsProps) {
     const DEBUG_FLAG = process.env.DEBUG
     const MIN_ATTEMPTS = Number(process.env.MIN_ATTEMPTS)
     const totalProblems = Number(process.env.NUM_PROBLEMS)
+    const RECORD_INTERVAL_MS = Number(process.env.RECORD_INTERVAL_MS)
 
     const searchParams = useSearchParams()
     const router = useRouter()
 
     const [codeSnippets, setCodeSnippets] = useState(codeSnippetsParams.code_snippets)
     const [doc, setDoc] = useState<string>(codeSnippets[0][1])
+    const [implicatedLines, setImplicatedLines] = useState<[Number]>()
     const [isLoading, setIsLoading] = useState({"waiting":false, "shade": 500, "button_text": "Submit"})
     const [canMoveNext, setCanMoveNext] = useState({"flag": false, "shade":300, "num_tries": 0})
 
+
     const handleDocChange =
         useCallback((newDoc: string) => {
-            // @ts-ignore
+        // @ts-ignore
         (editorState: EditorState) => setDoc({doc: doc.toString()})
+
     }, [])
 
     // @ts-ignore
@@ -56,6 +44,30 @@ export default function Editor(codeSnippetsParams : codeSnippetsProps) {
         onChange: handleDocChange
     })
 
+    useEffect( () => {
+        function recordCodeBlock() {
+            console.log(editorView?.state.doc.toString())
+            const res = fetch(`/api/recordcode`, {
+            method: 'PUT',
+            cache: 'no-cache',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+               'code_type': codeSnippets[0][0],
+               'code_snippet': editorView?.state.doc.toString(),
+               'bug_type': codeSnippets[0][2],
+               'pid': `${searchParams.get('tk')}`,
+               'implicated_lines': implicatedLines
+
+            })
+        })}
+
+        const interval = setInterval(recordCodeBlock, RECORD_INTERVAL_MS)
+        return () => clearInterval(interval)
+
+
+    }, [editorView?.state.doc]);
 
     //@ts-ignore
     // Note fixing and making this is an arrow function loses query param
@@ -68,30 +80,41 @@ export default function Editor(codeSnippetsParams : codeSnippetsProps) {
             return
         }
         try {
+            event.preventDefault()
+            fetch(`/api/submit`, {
+               method: 'POST',
+               cache: 'no-cache',
+               headers: {
+                   'Content-Type': 'application/json',
+               },
+               body: JSON.stringify({
+                   'code_type': codeSnippets[0][0],
+                   'code_snippet': editorView?.state.doc.toString(),
+                   'bug_type': codeSnippets[0][2],
+                   'pid': `${searchParams.get('tk')}`
+               })
+            }).then(res => res.json())
+                .then(data => setImplicatedLines(data.implicated_lines))
 
-            const res = await submitCode(searchParams, codeSnippets, editorView)
-
-            const data = await res.json()
-
-            const lines: [number] = data.implicated_lines
-
-            if (lines.includes(-1)) {
-                alert("There was an error; fix and try again")
-            }
             // @ts-ignore
-            //need to figure out new lines maybe?
-            if (editorView) {
-                highlightSusLines(editorView, lines)
+            if (implicatedLines.includes(-1)) {
+                alert("There was an compilation error; fix and try again")
+            } else {
+                // @ts-ignore
+                //need to figure out new lines maybe?
+                if (editorView) {
+                    // @ts-ignore
+                    highlightSusLines(editorView, implicatedLines)
+                }
+                setCanMoveNext({...canMoveNext, num_tries: canMoveNext.num_tries + 1})
+                if ( implicatedLines && !implicatedLines.length ){
+                    alert("Correct")
+                    setCanMoveNext({flag: false, shade: 300, num_tries: 0})
+                    handleNext(event)
+
+                }
             }
-            setCanMoveNext({...canMoveNext, num_tries: canMoveNext.num_tries + 1})
 
-            if ( lines && !lines.length ){
-                alert("Correct")
-                setCanMoveNext({flag: false, shade: 300, num_tries: 0})
-                handleNext(event)
-
-
-            }
         } catch (error){
             console.log(router)
 
@@ -117,7 +140,7 @@ export default function Editor(codeSnippetsParams : codeSnippetsProps) {
     // Note fixing and making this is an arrow function loses query param
     // not worth it to have a fully-pledged authenication middleware
        const handleNext = async (event) => {
-        let lines: [number] = [-1]
+
         try {
             event.preventDefault()
             const res = await fetch(`/api/submit`, {
@@ -135,15 +158,14 @@ export default function Editor(codeSnippetsParams : codeSnippetsProps) {
             })
             const data = await res.json()
 
-            lines = data.implicated_lines
 
-            if (lines.includes(-1)) {
+            if (data.implicated_lines.includes(-1)) {
                 alert("There was an error; fix and try again")
             }
             // @ts-ignore
             //need to figure out new lines maybe?
             if (editorView) {
-                highlightSusLines(editorView, lines)
+                highlightSusLines(editorView, data.implicated_lines)
             }
 
             if ( codeSnippets.length > 1 ){
@@ -156,10 +178,14 @@ export default function Editor(codeSnippetsParams : codeSnippetsProps) {
                 // @ts-ignore
                 highlightSusLines(editorView, [])
             } else {
-                alert("finished")
+                router.push('/done')
             }
+
+            setImplicatedLines(data.implicated_lines)
         } finally {
-            const solved = !lines.length ? 1 : -1
+            // @ts-ignore
+            const solved = !implicatedLines.length ? 1 : -1
+            console.log(solved)
             const res = await fetch(`/api/markproblem`, {
                 method: 'PATCH',
                 cache: 'no-cache',
@@ -170,7 +196,8 @@ export default function Editor(codeSnippetsParams : codeSnippetsProps) {
                    'problem_type': codeSnippets[0][0],
                    'bug_type': codeSnippets[0][2],
                    'participant_id': `${searchParams.get('tk')}`,
-                   'implicated_lines': lines.toString(),
+                    // @ts-ignore
+                   'implicated_lines': implicatedLines.toString(),
                    'solved': solved
                })
             })
@@ -196,7 +223,7 @@ export default function Editor(codeSnippetsParams : codeSnippetsProps) {
                     <div className={`flex ${styles.code} `} ref={refContainer}/>
                     <Image className='flex flex-grow w-1/2 h-1/2  justify-center align-center' src={FilpFlop} alt={'diagram'} />
                 </div>
-                <Spacer y={50}/>
+                <Spacer y={52}/>
                 <div className='flex flex-row gap-x-20 justify-center'>
                     <button className={`w-1/4 bg-blue-${isLoading.shade} hover:bg-blue-700 text-white font-bold py-2 px-4 border border-blue-700 rounded mb-5`} type='submit' disabled={isLoading.waiting} onClick={handleSubmit}>{isLoading.button_text}</button>
                     {NextButton()}
