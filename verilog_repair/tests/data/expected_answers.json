@@ -1,0 +1,8 @@
+{
+  "decoder_3_to_8_wadden_buggy1.v": [15, 16, 17, 18, 19, 20, 21, 22, 23],
+  "first_counter_overflow_wadden_buggy1.v":[38, 39, 40, 43, 44, 47, 49],
+  "tff_wadden_buggy1.v": [8, 9, 10, 11, 13],
+  "fsm_full_wadden_buggy1.v": [41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 52, 54, 55, 57, 59, 60, 62, 64, 65, 67, 69, 70, 72, 74, 80, 84, 85, 87, 88, 89, 93, 108],
+  "lshift_reg_wadden_buggy1.v": [13, 14, 19, 20, 22],
+  "mux_4_1_wadden_buggy1.v": [11, 12, 13, 14, 15]
+}
